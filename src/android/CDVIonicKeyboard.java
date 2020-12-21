@@ -12,6 +12,7 @@ import org.json.JSONException;
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -77,10 +78,7 @@ public class CDVIonicKeyboard extends CordovaPlugin {
                         int previousHeightDiff = 0;
                         @Override
                         public void onGlobalLayout() {
-                            boolean resize = preferences.getBoolean("resizeOnFullScreen", false);
-                            if (resize) {
-                                possiblyResizeChildOfContent();
-                            }
+
                             Rect r = new Rect();
                             //r will be populated with the coordinates of your view that area still visible.
                             rootView.getWindowVisibleDisplayFrame(r);
@@ -107,7 +105,15 @@ public class CDVIonicKeyboard extends CordovaPlugin {
                             int heightDiff = screenHeight - resultBottom;
 
                             int pixelHeightDiff = (int)(heightDiff / density);
-                            if (pixelHeightDiff > 100 && pixelHeightDiff != previousHeightDiff) { // if more than 100 pixels, its probably a keyboard...
+
+                            boolean isKeyboardShown = pixelHeightDiff > 100 && pixelHeightDiff != previousHeightDiff;
+
+                            boolean resize = preferences.getBoolean("resizeOnFullScreen", false);
+                            if (resize) {
+                              possiblyResizeChildOfContent(isKeyboardShown);
+                            }
+
+                            if (isKeyboardShown) { // if more than 100 pixels, its probably a keyboard...
                                 String msg = "S" + Integer.toString(pixelHeightDiff);
                                 result = new PluginResult(PluginResult.Status.OK, msg);
                                 result.setKeepCallback(true);
@@ -122,10 +128,11 @@ public class CDVIonicKeyboard extends CordovaPlugin {
                             previousHeightDiff = pixelHeightDiff;
                         }
 
-                        private void possiblyResizeChildOfContent() {
+                        private void possiblyResizeChildOfContent(boolean isKeyboardShown) {
                             int usableHeightNow = computeUsableHeight();
                             if (usableHeightNow != usableHeightPrevious) {
                                 frameLayoutParams.height = usableHeightNow;
+                                frameLayoutParams.gravity = isKeyboardShown ? Gravity.TOP : Gravity.BOTTOM;
                                 mChildOfContent.requestLayout();
                                 usableHeightPrevious = usableHeightNow;
                             }
