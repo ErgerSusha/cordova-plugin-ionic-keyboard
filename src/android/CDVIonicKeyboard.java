@@ -31,6 +31,8 @@ public class CDVIonicKeyboard extends CordovaPlugin {
     private int usableHeightPrevious;
     private FrameLayout.LayoutParams frameLayoutParams;
 
+    private boolean secondFullScreenToggle = false;
+
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
     }
@@ -126,8 +128,11 @@ public class CDVIonicKeyboard extends CordovaPlugin {
                             final Rect r = new Rect();
                             mChildOfContent.getWindowVisibleDisplayFrame(r);
                             final boolean fullScreen = isFullScreen();
-                            mChildOfContent.setPadding(0, fullScreen ? r.top : 0, 0, 0);
-                            int usableHeightNow = fullScreen ? r.bottom : r.height();
+                            if (fullScreen && !secondFullScreenToggle) {
+                              secondFullScreenToggle = true;
+                            }
+                            mChildOfContent.setPadding(0, (r.top > 0 && (fullScreen || secondFullScreenToggle)) ? r.top : 0, 0, 0);
+                            int usableHeightNow = (fullScreen || secondFullScreenToggle) ? r.bottom : r.height();
                             if (usableHeightNow != usableHeightPrevious) {
                                 frameLayoutParams.height = usableHeightNow;
                                 mChildOfContent.requestLayout();
@@ -137,7 +142,7 @@ public class CDVIonicKeyboard extends CordovaPlugin {
 
                         private boolean isFullScreen() {
                             final Window window = cordova.getActivity().getWindow();
-                            int fullScreenFlag = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                            int fullScreenFlag = View.SYSTEM_UI_FLAG_FULLSCREEN;
                             return (window.getDecorView().getSystemUiVisibility() & fullScreenFlag) == fullScreenFlag;
                         }
                     };
